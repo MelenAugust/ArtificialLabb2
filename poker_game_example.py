@@ -1,6 +1,7 @@
 from cmath import phase
 
 import poker_environment as pe_
+from heapq import heappush, heappop
 from poker_environment import AGENT_ACTIONS, BETTING_ACTIONS
 import copy
 from collections import deque
@@ -64,6 +65,9 @@ class GameState(object):
         self.opponent = opponent_
         self.showdown_info = None
 
+    def __lt__(self, other):
+
+        return False
     """
     draw 10 cards randomly from a deck
     """
@@ -358,11 +362,10 @@ def count_all_states_up_to_hand_4(initial_state):
     count = 0
     queue = deque([initial_state])  # BFS queue
     visited = set()
-    total_states = 0  
+    total_states = 0  # Counter for all states generated
 
     while queue:
         current_state = queue.popleft()
-
 
         if current_state in visited:
             continue
@@ -381,18 +384,50 @@ def count_all_states_up_to_hand_4(initial_state):
     return total_states,count
 
 
+def heuristic(state): #Calculates the difference between the hands
+
+    return state.opponent.current_hand_strength - state.agent.current_hand_strength
+
+def a_star_search_with_heuristic(initial_state):
+
+    queue = []
+    heappush(queue, (0, initial_state, []))
+    visited = set()
+    nodes_expanded = 0
+
+    while queue:
+
+        priority, current_state, path = heappop(queue)
+        nodes_expanded += 1
 
 
+        if is_goal_state(current_state):
+            print(f"found a solution! : {nodes_expanded}")
+            return path + [current_state], nodes_expanded
 
 
+        if current_state in visited:
+            continue
+        visited.add(current_state)
+
+        # Get next states
+        next_states = get_next_states(current_state)
+        for state in next_states:
+
+            g = len(path) + 1
+            h = heuristic(state)
+            f = g + h #value that is assigned to the state that is a combination between how much better agents hand is and the layer we are at
 
 
+            heappush(queue, (f, state, path + [current_state]))
+
+    print(f"No solution found. Nodes expanded: {nodes_expanded}")
+    return None, nodes_expanded
 
 
+def is_goal_state(current_state):
 
-def is_goal_state(state):
-
-    return  state.agent.stack >= 200 and state.nn_current_hand <= 4
+    return  current_state.agent.stack >= 200 and current_state.nn_current_hand <= 4
 
 """
 Game flow:
@@ -419,25 +454,35 @@ init_state = GameState(nn_current_hand_=1,
 
 
 
-
+"""
 print("Starting BFS search...")
-solution_path, nodes_expanded, node_history = dfs_search_with_history(init_state)
+solution_path, nodes_expanded, node_history = bfs_search_with_history(init_state)
 
 if solution_path:
  print(f"Solution path found! Nodes expanded: {nodes_expanded}")
  for idx, (node_id, state) in enumerate(solution_path):
-     print(f"Step {idx + 1}: Node {node_id}")
-     state.print_state_info()
- else:
+  print(f"Step {idx + 1}: Node {node_id}")
+  state.print_state_info()
+else:
      print("No solution found.")
-
-#total_states,count = count_all_states_up_to_hand_4(init_state)
+"""
+"""
+total_states,count = count_all_states_up_to_hand_4(init_state)
 
 # Print the result
 #print(f"Total states generated up to hand 4: {total_states}")
+"""
 
+solution_path, nodes_expanded = a_star_search_with_heuristic(init_state)
 
-
+# Print the solution
+if solution_path:
+   print("Solution found:")
+   for idx, state in enumerate(solution_path):
+    print(f"Step {idx + 1}:")
+    state.print_state_info()
+else:
+   print("No solution found.")
 
 
 
