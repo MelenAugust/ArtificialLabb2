@@ -358,15 +358,12 @@ def count_all_states_up_to_hand_4(initial_state):
     count = 0
     queue = deque([initial_state])  # BFS queue
     visited = set()
-    total_states = 0  # Counter for all states generated
+    total_states = 0  
 
     while queue:
         current_state = queue.popleft()
 
 
-
-
-        # Skip already visited states
         if current_state in visited:
             continue
         visited.add(current_state)
